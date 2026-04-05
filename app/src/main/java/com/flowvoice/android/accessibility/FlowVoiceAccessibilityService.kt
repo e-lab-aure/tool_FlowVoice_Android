@@ -97,6 +97,12 @@ class FlowVoiceAccessibilityService : AccessibilityService() {
     fun injectText(text: String): Boolean {
         val node = focusedNode ?: return false
 
+        // Refresh the node to get the current text, not the stale snapshot
+        // captured at focus time. Without this, repeated dictations overwrite
+        // each other because node.text still reflects the state before the
+        // previous ACTION_SET_TEXT was applied.
+        node.refresh()
+
         val rawText = node.text?.toString() ?: ""
         val hintText = node.hintText?.toString() ?: ""
         // Ignore the field content if it only contains the hint/placeholder text
