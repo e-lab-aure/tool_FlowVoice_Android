@@ -1,0 +1,46 @@
+# Local configuration - never commit
+CLAUDE.md
+Claude.md
+.claude/
+local.properties
+*.env
+.env
+
+# Build outputs
+/build
+app/build
+**/build/
+
+# Gradle caches and wrappers (keep wrapper scripts, ignore cache)
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Android Studio project files
+*.iml
+.idea/
+*.idea/
+.navigation/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Signing keystores - never commit
+*.jks
+*.keystore
+keystore.properties
+
+# Generated files
+app/src/main/assets/
+app/src/*/rs/
+app/src/*/res/raw/
+
+# Test results
+app/src/test/
+app/src/androidTest/
+
+# Profiling
+*.hprof
+captures/

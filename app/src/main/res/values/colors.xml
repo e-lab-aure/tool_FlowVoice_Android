@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#1565C0</color>
+    <color name="colorPrimaryVariant">#0D47A1</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorSecondary">#00ACC1</color>
+    <color name="colorOnSecondary">#FFFFFF</color>
+    <color name="colorBackground">#FAFAFA</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorError">#D32F2F</color>
+
+    <!-- Overlay button states -->
+    <color name="overlay_idle">#CC1565C0</color>
+    <color name="overlay_recording">#CCE53935</color>
+    <color name="overlay_loading">#CC757575</color>
+    <color name="overlay_success">#CC2E7D32</color>
+    <color name="overlay_error">#CCB71C1C</color>
+
+    <!-- Status indicators -->
+    <color name="status_ok">#388E3C</color>
+    <color name="status_error">#D32F2F</color>
+</resources>
