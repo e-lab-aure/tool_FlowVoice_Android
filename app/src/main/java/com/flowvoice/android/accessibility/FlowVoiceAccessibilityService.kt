@@ -64,7 +64,9 @@ class FlowVoiceAccessibilityService : AccessibilityService() {
     }
 
     /**
-     * Injects [text] into the currently focused text field.
+     * Appends [text] to whatever is already in the focused text field.
+     * A space is inserted between the existing content and the new text
+     * unless the field is empty or already ends with a whitespace character.
      *
      * Returns true if injection succeeded, false if fallback (clipboard) is needed.
      * Must be called from the main thread.
@@ -72,15 +74,22 @@ class FlowVoiceAccessibilityService : AccessibilityService() {
     fun injectText(text: String): Boolean {
         val node = focusedNode ?: return false
 
+        val existing = node.text?.toString() ?: ""
+        val combined = when {
+            existing.isEmpty() -> text
+            existing.last().isWhitespace() -> existing + text
+            else -> "$existing $text"
+        }
+
         val args = Bundle()
         args.putCharSequence(
             AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
-            text
+            combined
         )
         val success = node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
 
         if (!success) {
-            // Fallback: try clipboard paste
+            // Fallback: try clipboard paste (appends at cursor position)
             node.performAction(AccessibilityNodeInfo.ACTION_PASTE)
         }
 
