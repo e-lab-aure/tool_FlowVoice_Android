@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import com.flowvoice.android.overlay.OverlayService
 
 /**
@@ -63,9 +64,14 @@ class FlowVoiceAccessibilityService : AccessibilityService() {
                 }
             }
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                // A new activity or dialog opened; hide the overlay
-                clearFocusedNode()
-                OverlayService.instance?.hide()
+                // Hide only if the new window is NOT the soft keyboard (IME).
+                // When the user taps a text field, the keyboard opens and fires this
+                // event - we must not hide in that case.
+                val imeVisible = windows?.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD } == true
+                if (!imeVisible) {
+                    clearFocusedNode()
+                    OverlayService.instance?.hide()
+                }
             }
         }
     }
