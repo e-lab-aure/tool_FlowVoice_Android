@@ -36,21 +36,38 @@ class FlowVoiceAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        if (event.eventType != AccessibilityEvent.TYPE_VIEW_FOCUSED) return
-
-        val source = event.source ?: return
-        if (!source.isEditable) {
-            source.recycle()
-            // Non-editable focus: hide the overlay
-            OverlayService.instance?.hide()
-            return
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
+                val source = event.source
+                // Null source means focus moved to a non-focusable area - hide the overlay
+                if (source == null || !source.isEditable) {
+                    source?.recycle()
+                    clearFocusedNode()
+                    OverlayService.instance?.hide()
+                    return
+                }
+                focusedNode?.recycle()
+                focusedNode = source
+                OverlayService.instance?.show()
+            }
+            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
+                // User tapped a non-editable element: hide unless an editable field
+                // will immediately gain focus (TYPE_VIEW_FOCUSED will follow in that case)
+                val source = event.source
+                if (source != null && !source.isEditable) {
+                    source.recycle()
+                    clearFocusedNode()
+                    OverlayService.instance?.hide()
+                } else {
+                    source?.recycle()
+                }
+            }
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                // A new activity or dialog opened; hide the overlay
+                clearFocusedNode()
+                OverlayService.instance?.hide()
+            }
         }
-
-        // Replace previous focused node reference
-        focusedNode?.recycle()
-        focusedNode = source
-
-        OverlayService.instance?.show()
     }
 
     override fun onInterrupt() {
