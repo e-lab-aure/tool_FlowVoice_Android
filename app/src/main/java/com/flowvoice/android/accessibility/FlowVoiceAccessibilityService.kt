@@ -91,7 +91,10 @@ class FlowVoiceAccessibilityService : AccessibilityService() {
     fun injectText(text: String): Boolean {
         val node = focusedNode ?: return false
 
-        val existing = node.text?.toString() ?: ""
+        val rawText = node.text?.toString() ?: ""
+        val hintText = node.hintText?.toString() ?: ""
+        // Ignore the field content if it only contains the hint/placeholder text
+        val existing = if (rawText.isEmpty() || rawText == hintText) "" else rawText
         val combined = when {
             existing.isEmpty() -> text
             existing.last().isWhitespace() -> existing + text
