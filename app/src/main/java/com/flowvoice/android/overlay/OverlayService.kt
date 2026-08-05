@@ -15,7 +15,6 @@ import android.os.IBinder
 import android.os.Looper
 import android.view.Gravity
 import android.view.MotionEvent
-import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
@@ -31,7 +30,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.abs
 import kotlin.math.sqrt
 
 class OverlayService : LifecycleService() {
@@ -98,8 +96,10 @@ class OverlayService : LifecycleService() {
             y = 200
         }
 
+        // The overlay stays visible for the whole lifetime of the service so the
+        // user can start a dictation at any moment, not only when a text field
+        // happens to report focus.
         windowManager.addView(overlayView, layoutParams)
-        overlayView.visibility = View.GONE
 
         overlayView.setOnTouchListener { _, event -> handleTouch(event) }
     }
@@ -121,20 +121,6 @@ class OverlayService : LifecycleService() {
     }
 
     override fun onBind(intent: Intent): IBinder? = super.onBind(intent)
-
-    // --- Overlay visibility ---
-
-    fun show() {
-        mainHandler.post { overlayView.visibility = View.VISIBLE }
-    }
-
-    fun hide() {
-        mainHandler.post {
-            if (!isRecording) {
-                overlayView.visibility = View.GONE
-            }
-        }
-    }
 
     // --- Touch handling ---
 

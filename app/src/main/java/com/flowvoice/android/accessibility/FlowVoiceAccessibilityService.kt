@@ -6,15 +6,16 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import android.view.accessibility.AccessibilityWindowInfo
 import com.flowvoice.android.overlay.OverlayService
 
 /**
  * Accessibility service that:
  * - Listens for focus events on editable text fields across all apps
  * - Stores a reference to the focused node for later text injection
- * - Triggers the floating overlay to appear when an editable field is focused
  * - Injects transcribed text into the focused field via ACTION_SET_TEXT
+ *
+ * The floating overlay is not driven by focus events: it stays visible for the
+ * whole lifetime of [OverlayService].
  */
 class FlowVoiceAccessibilityService : AccessibilityService() {
 
@@ -37,43 +38,18 @@ class FlowVoiceAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        when (event.eventType) {
-            AccessibilityEvent.TYPE_VIEW_FOCUSED -> {
-                val source = event.source
-                // Null source means focus moved to a non-focusable area - hide the overlay
-                if (source == null || !source.isEditable) {
-                    source?.recycle()
-                    clearFocusedNode()
-                    OverlayService.instance?.hide()
-                    return
-                }
-                focusedNode?.recycle()
-                focusedNode = source
-                OverlayService.instance?.show()
-            }
-            AccessibilityEvent.TYPE_VIEW_CLICKED -> {
-                // User tapped a non-editable element: hide unless an editable field
-                // will immediately gain focus (TYPE_VIEW_FOCUSED will follow in that case)
-                val source = event.source
-                if (source != null && !source.isEditable) {
-                    source.recycle()
-                    clearFocusedNode()
-                    OverlayService.instance?.hide()
-                } else {
-                    source?.recycle()
-                }
-            }
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
-                // Hide only if the new window is NOT the soft keyboard (IME).
-                // When the user taps a text field, the keyboard opens and fires this
-                // event - we must not hide in that case.
-                val imeVisible = windows?.any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD } == true
-                if (!imeVisible) {
-                    clearFocusedNode()
-                    OverlayService.instance?.hide()
-                }
-            }
+        if (event.eventType != AccessibilityEvent.TYPE_VIEW_FOCUSED) return
+
+        val source = event.source ?: return
+        // Only editable nodes are worth keeping. Focus moving to a non-editable
+        // element does not clear the stored node: the user may still dictate, and
+        // injectText() validates the node before writing into it.
+        if (!source.isEditable) {
+            source.recycle()
+            return
         }
+        focusedNode?.recycle()
+        focusedNode = source
     }
 
     override fun onInterrupt() {
@@ -101,7 +77,12 @@ class FlowVoiceAccessibilityService : AccessibilityService() {
         // captured at focus time. Without this, repeated dictations overwrite
         // each other because node.text still reflects the state before the
         // previous ACTION_SET_TEXT was applied.
-        node.refresh()
+        // A failed refresh means the field no longer exists (window closed,
+        // list item recycled): drop it so the caller uses the clipboard fallback.
+        if (!node.refresh()) {
+            clearFocusedNode()
+            return false
+        }
 
         val rawText = node.text?.toString() ?: ""
         val hintText = node.hintText?.toString() ?: ""
